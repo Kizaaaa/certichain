@@ -1,0 +1,39 @@
+{
+  "_format": "hh3-sol-build-info-1",
+  "id": "solc-0_8_28-03836695696db1f79268f5c4ab8e7f404eea7cee",
+  "solcVersion": "0.8.28",
+  "solcLongVersion": "0.8.28+commit.7893614a",
+  "userSourceNameMap": {
+    "contracts/CertificateRegistry.sol": "project/contracts/CertificateRegistry.sol"
+  },
+  "input": {
+    "language": "Solidity",
+    "settings": {
+      "evmVersion": "cancun",
+      "optimizer": {
+        "enabled": true,
+        "runs": 200
+      },
+      "outputSelection": {
+        "*": {
+          "": [
+            "ast"
+          ],
+          "*": [
+            "abi",
+            "evm.bytecode",
+            "evm.deployedBytecode",
+            "evm.methodIdentifiers",
+            "metadata"
+          ]
+        }
+      },
+      "remappings": []
+    },
+    "sources": {
+      "project/contracts/CertificateRegistry.sol": {
+        "content": "// SPDX-License-Identifier: MIT\r\npragma solidity ^0.8.28;\r\n\r\ncontract CertificateRegistry {\r\n    struct Certificate {\r\n        bytes32 docHash;\r\n        string storageURI;\r\n        address issuer;\r\n        uint256 issuedAt;\r\n        bool revoked;\r\n    }\r\n\r\n    uint256 public certCount;\r\n    mapping(uint256 => Certificate) public certificates;\r\n\r\n    event CertificateIssued(\r\n        uint256 indexed certId,\r\n        bytes32 docHash,\r\n        address issuer\r\n    );\r\n\r\n    event CertificateRevoked(\r\n        uint256 indexed certId,\r\n        string reason\r\n    );\r\n\r\n    modifier onlyIssuer(uint256 certId) {\r\n        require(certificates[certId].issuer == msg.sender, \"Not issuer\");\r\n        _;\r\n    }\r\n\r\n    function issueCertificate(\r\n        bytes32 _docHash,\r\n        string calldata _storageURI\r\n    ) external returns (uint256) {\r\n        certCount++;\r\n\r\n        certificates[certCount] = Certificate({\r\n            docHash: _docHash,\r\n            storageURI: _storageURI,\r\n            issuer: msg.sender,\r\n            issuedAt: block.timestamp,\r\n            revoked: false\r\n        });\r\n\r\n        emit CertificateIssued(certCount, _docHash, msg.sender);\r\n        return certCount;\r\n    }\r\n\r\n    function revokeCertificate(\r\n        uint256 certId,\r\n        string calldata reason\r\n    ) external onlyIssuer(certId) {\r\n        certificates[certId].revoked = true;\r\n        emit CertificateRevoked(certId, reason);\r\n    }\r\n}\r\n"
+      }
+    }
+  }
+}
