@@ -15,6 +15,9 @@ export default function IssueForm() {
   const [name, setName] = useState('');
   const [nim, setNim] = useState('');
   const [gelar, setGelar] = useState('');
+  const [tempatLahir, setTempatLahir] = useState('');
+  const [tanggalLahir, setTanggalLahir] = useState('');
+  const [prodi, setProdi] = useState('');
   const [pdfBlob, setPdfBlob] = useState<Blob | null>(null);
   const [docHash, setDocHash] = useState('');
   const [storageURI, setStorageURI] = useState('');
@@ -24,15 +27,43 @@ export default function IssueForm() {
 
   const generatePDF = async () => {
     const template = document.createElement('div');
-    template.innerHTML = `
-        <div style="width: 800px; height: 600px; padding: 50px; font-family: serif; text-align: center; background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%); border-radius: 20px; position: relative;">
-        <h1 style="font-size: 36px; color: #2c3e50; margin-bottom: 30px;">DIPLOMA</h1>
-        <h2 style="font-size: 28px; color: #34495e; margin-bottom: 40px;">${gelar}</h2>
-        <p style="font-size: 24px; color: #2c3e50; margin-bottom: 20px;">${name}</p>
-        <p style="font-size: 20px; color: #7f8c8d;">NIM: ${nim}</p>
-        <p style="font-size: 16px; color: #95a5a6; margin-top: 50px;">Issued on ${new Date().toLocaleDateString()}</p>
-        </div>
-    `;
+        template.innerHTML = `
+            <div style="width: 800px; height: 1000px; padding: 60px; font-family: 'Times New Roman', serif; background: white; position: relative;">
+            <!-- Header & Content -->
+            <div style="text-align: center; margin-bottom: 60px;">
+                <p style="font-size: 14px; margin: 0 0 5px 0; font-weight: bold;">Kementerian Pendidikan Tinggi, Sains, dan Teknologi</p>
+                <p style="font-size: 16px; margin: 0 0 30px 0; font-weight: bold;">Institut Teknologi Grove</p>
+            </div>
+
+            <div style="text-align: center; margin-bottom: 40px;">
+                <p style="font-size: 13px; margin: 0 0 20px 0;">dengan ini menyatakan bahwa</p>
+            </div>
+
+            <div style="text-align: center; margin-bottom: 40px;">
+                <p style="font-size: 20px; margin: 0 0 10px 0; font-weight: bold;">${name}</p>
+                <p style="font-size: 13px; margin: 0;">NIM ${nim}</p>
+            </div>
+
+            <div style="text-align: center; margin-bottom: 40px; line-height: 1.8;">
+                <p style="font-size: 13px; margin: 0;">lahir di ${tempatLahir || '___________'}, tanggal ${tanggalLahir || '___________'}, telah menyelesaikan dengan baik dan sudah memenuhi semua persyaratan pada Program Studi ${prodi || '___________'}</p>
+            </div>
+
+            <div style="text-align: center; margin-bottom: 40px;">
+                <p style="font-size: 13px; margin: 0 0 15px 0;">Oleh sebab itu kepadanya diberikan gelar</p>
+                <p style="font-size: 18px; margin: 0; font-weight: bold;">${gelar}</p>
+                <p style="font-size: 13px; margin: 15px 0 0 0;">beserta hak dan segala kewajiban yang melekat pada gelar tersebut.</p>
+                <p style="font-size: 13px; margin: 0 0 60px 0;">Diberikan di Amphoreus tanggal ${new Date().toLocaleDateString()}</p>
+            </div>
+
+            <!-- Right Aligned Section -->
+            <div style="text-align: right; margin-top: 80px; margin-right: 40px;">
+                <p style="font-size: 13px; margin: 0 0 80px 0; font-weight: bold;">Rektor</p>
+                
+                <p style="font-size: 13px; margin: 0 0 5px 0; font-weight: bold;">Prof. Dr. Ir. Anaxagoras, M.T.</p>
+                <p style="font-size: 13px; margin: 0;">NIP: 33550336</p>
+            </div>
+            </div>
+        `;
     
     template.style.position = 'absolute';
     template.style.left = '-9999px';
@@ -48,24 +79,23 @@ export default function IssueForm() {
     document.body.removeChild(template);
     
     const imgData = canvas.toDataURL('image/png');
-    const pdf = new jsPDF('landscape', 'mm', 'a4');
-    pdf.addImage(imgData, 'PNG', 0, 0, 297, 210);
+    const pdf = new jsPDF('portrait', 'mm', 'a4');
+    pdf.addImage(imgData, 'PNG', 0, 0, 210, 297);
     
     const pdfBlob = pdf.output('blob');
     setPdfBlob(pdfBlob);
     
     // Compute hash
     const arrayBuffer = await pdfBlob.arrayBuffer();
-    const hashBuffer = await crypto.subtle.digest('SHA-256', arrayBuffer);
-    const hashArray = Array.from(new Uint8Array(hashBuffer));
-    setDocHash('0x' + hashArray.map(b => b.toString(16).padStart(2, '0')).join(''));
+    const hash = await sha256(arrayBuffer)
+    setDocHash(hash);
     };
 
   const uploadIPFS = async (blob: Blob) => {
         if (pdfBlob) {
             try {
                 const formData = new FormData();
-                formData.append("file", pdfBlob);
+                formData.append("file", pdfBlob, `${name}_${nim}_ijazah`);
 
                 const response = await fetch("https://api.pinata.cloud/pinning/pinFileToIPFS", {
                     method: "POST",
@@ -110,20 +140,17 @@ export default function IssueForm() {
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <input type="text" placeholder="Nama Mahasiswa" value={name} onChange={(e) => setName(e.target.value)} className="p-3 border rounded" />
         <input type="text" placeholder="NIM" value={nim} onChange={(e) => setNim(e.target.value)} className="p-3 border rounded" />
+        <input type="text" placeholder="Tempat Lahir Mahasiswa" value={tempatLahir} onChange={(e) => setTempatLahir(e.target.value)} className="p-3 border rounded" />
+        <input type="text" placeholder="Tanggal Lahir Mahasiswa" value={tanggalLahir} onChange={(e) => setTanggalLahir(e.target.value)} className="p-3 border rounded" />
+        <input type="text" placeholder="Program Studi" value={prodi} onChange={(e) => setProdi(e.target.value)} className="p-3 border rounded" />
         <input type="text" placeholder="Gelar" value={gelar} onChange={(e) => setGelar(e.target.value)} className="p-3 border rounded" />
       </div>
 
       <button onClick={generatePDF} className="bg-blue-500 text-white px-6 py-3 rounded">Generate PDF</button>
 
-        {docHash && (
-        <div className="p-3 bg-gray-100 rounded mb-4">
-            <strong>PDF Generated - Hash:</strong> {docHash}
-        </div>
-        )}
-
       <div className="grid grid-cols-2 gap-4">
-        <button onClick={() => uploadIPFS(pdfBlob!)} className="bg-green-500 text-white px-6 py-3 rounded">Upload IPFS</button>
-        <button onClick={signDocument} className="bg-purple-500 text-white px-6 py-3 rounded">Sign</button>
+        <button onClick={() => uploadIPFS(pdfBlob!)} className="bg-blue-500 text-white px-6 py-3 rounded">Upload IPFS</button>
+        <button onClick={signDocument} className="bg-blue-500 text-white px-6 py-3 rounded">Sign</button>
       </div>
 
       <button onClick={handleIssue} disabled={loading || !docHash || !storageURI || !signature} 
