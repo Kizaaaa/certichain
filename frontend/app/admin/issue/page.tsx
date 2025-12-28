@@ -29,62 +29,71 @@ export default function IssueForm() {
 
   const generatePDF = async () => {
     try {
-      setStatus('Generating PDF...');
-      const template = document.createElement('div');
-        template.innerHTML = `
-            <div style="width: 800px; height: 1000px; padding: 60px; font-family: 'Times New Roman', serif; background: white; position: relative;">
-            <!-- Header & Content -->
-            <div style="text-align: center; margin-bottom: 60px;">
-                <p style="font-size: 14px; margin: 0 0 5px 0; font-weight: bold;">Kementerian Pendidikan Tinggi, Sains, dan Teknologi</p>
-                <p style="font-size: 16px; margin: 0 0 30px 0; font-weight: bold;">Institut Teknologi Grove</p>
-            </div>
+        setStatus('Generating PDF...');
+        const pdf = new jsPDF('portrait', 'mm', 'a4');
+        
+        const issueDate = new Date().toLocaleDateString('id-ID', { 
+            year: 'numeric', 
+            month: 'long', 
+            day: 'numeric' 
+        });
 
-            <div style="text-align: center; margin-bottom: 40px;">
-                <p style="font-size: 13px; margin: 0 0 20px 0;">dengan ini menyatakan bahwa</p>
-            </div>
+        const pageWidth = pdf.internal.pageSize.getWidth();
+        const pageHeight = pdf.internal.pageSize.getHeight();
+        let yPos = 30;
 
-            <div style="text-align: center; margin-bottom: 40px;">
-                <p style="font-size: 20px; margin: 0 0 10px 0; font-weight: bold;">${name}</p>
-                <p style="font-size: 13px; margin: 0;">NIM ${nim}</p>
-            </div>
+        pdf.setFont('times', 'bold');
+        pdf.setFontSize(12);
+        pdf.text('Kementerian Pendidikan Tinggi, Sains, dan Teknologi', pageWidth / 2, yPos, { align: 'center' });
+        yPos += 8;
+        
+        pdf.setFontSize(13);
+        pdf.text('Institut Teknologi Grove', pageWidth / 2, yPos, { align: 'center' });
+        yPos += 25;
 
-            <div style="text-align: center; margin-bottom: 40px; line-height: 1.8;">
-                <p style="font-size: 13px; margin: 0;">lahir di ${tempatLahir || '___________'}, tanggal ${tanggalLahir || '___________'}, telah menyelesaikan dengan baik dan sudah memenuhi semua persyaratan pada Program Studi ${prodi || '___________'}</p>
-            </div>
+        pdf.setFont('times', 'normal');
+        pdf.setFontSize(11);
+        pdf.text('dengan ini menyatakan bahwa', pageWidth / 2, yPos, { align: 'center' });
+        yPos += 20;
 
-            <div style="text-align: center; margin-bottom: 40px;">
-                <p style="font-size: 13px; margin: 0 0 15px 0;">Oleh sebab itu kepadanya diberikan gelar</p>
-                <p style="font-size: 18px; margin: 0; font-weight: bold;">${gelar}</p>
-                <p style="font-size: 13px; margin: 15px 0 0 0;">beserta hak dan segala kewajiban yang melekat pada gelar tersebut.</p>
-                <p style="font-size: 13px; margin: 0 0 60px 0;">Diberikan di Amphoreus tanggal ${new Date().toLocaleDateString()}</p>
-            </div>
+        pdf.setFont('times', 'bold');
+        pdf.setFontSize(14);
+        pdf.text(name, pageWidth / 2, yPos, { align: 'center' });
+        yPos += 8;
 
-            <!-- Right Aligned Section -->
-            <div style="text-align: right; margin-top: 80px; margin-right: 40px;">
-                <p style="font-size: 13px; margin: 0 0 80px 0; font-weight: bold;">Rektor</p>
-                
-                <p style="font-size: 13px; margin: 0 0 5px 0; font-weight: bold;">Prof. Dr. Ir. Anaxagoras, M.T.</p>
-                <p style="font-size: 13px; margin: 0;">NIP: 33550336</p>
-            </div>
-            </div>
-        `;
-    
-    template.style.position = 'absolute';
-    template.style.left = '-9999px';
-    document.body.appendChild(template);
-    
-    const canvas = await html2canvas(template, { 
-        scale: 2, 
-        useCORS: false,
-        allowTaint: true,
-        logging: false
-    });
-    
-    document.body.removeChild(template);
-    
-    const imgData = canvas.toDataURL('image/png');
-    const pdf = new jsPDF('portrait', 'mm', 'a4');
-    pdf.addImage(imgData, 'PNG', 0, 0, 210, 297);
+        pdf.setFont('times', 'normal');
+        pdf.setFontSize(11);
+        pdf.text(`NIM ${nim}`, pageWidth / 2, yPos, { align: 'center' });
+        yPos += 25;
+
+        const bioText = `lahir di ${tempatLahir}, tanggal ${tanggalLahir}, telah menyelesaikan dengan baik dan sudah memenuhi semua persyaratan pada Program Studi ${prodi}`;
+        const splitText = pdf.splitTextToSize(bioText, 150);
+        pdf.text(splitText, pageWidth / 2, yPos, { align: 'center' });
+        yPos += splitText.length * 5 + 20;
+
+        pdf.text('Oleh sebab itu kepadanya diberikan gelar', pageWidth / 2, yPos, { align: 'center' });
+        yPos += 10;
+
+        pdf.setFont('times', 'bold');
+        pdf.setFontSize(13);
+        pdf.text(gelar, pageWidth / 2, yPos, { align: 'center' });
+        yPos += 10;
+
+        pdf.setFont('times', 'normal');
+        pdf.setFontSize(11);
+        pdf.text('beserta hak dan segala kewajiban yang melekat pada gelar tersebut.', pageWidth / 2, yPos, { align: 'center' });
+        yPos = pageHeight - 80;
+
+        pdf.text(`Diberikan di Amphoreus tanggal ${issueDate}`, pageWidth - 30, yPos, { align: 'right' });
+        yPos += 25;
+
+        pdf.setFont('times', 'bold');
+        pdf.text('Rektor', pageWidth - 30, yPos, { align: 'right' });
+        yPos += 30;
+
+        pdf.text('Prof. Dr. Ir. Anaxagoras, M.T.', pageWidth - 30, yPos, { align: 'right' });
+        yPos += 6;
+        pdf.text('NIP: 33550336', pageWidth - 30, yPos, { align: 'right' });
     
     const pdfBlob = pdf.output('blob');
     setPdfBlob(pdfBlob);
