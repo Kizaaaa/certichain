@@ -1,57 +1,116 @@
-# Sample Hardhat 3 Beta Project (`mocha` and `ethers`)
+# Tugas Besar II (Tubes II) IF4020 Kriptografi Sem. I Tahun 2025/2026
 
-This project showcases a Hardhat 3 Beta project using `mocha` for tests and the `ethers` library for Ethereum interactions.
+## Sistem Pencatatan Ijazah Digital Berbasis Blockchain atau Centralized Immutable Ledger
 
-To learn more about the Hardhat 3 Beta, please visit the [Getting Started guide](https://hardhat.org/docs/getting-started#getting-started-with-hardhat-3). To share your feedback, join our [Hardhat 3 Beta](https://hardhat.org/hardhat3-beta-telegram-group) Telegram group or [open an issue](https://github.com/NomicFoundation/hardhat/issues/new) in our GitHub issue tracker.
+## Link smart contract etherscan
 
-## Project Overview
+https://sepolia.etherscan.io/address/0xaf8415F54E128e96a0487c3EAa6FC2166D981510
 
-This example project includes:
+## Daftar Fungsi
 
-- A simple Hardhat configuration file.
-- Foundry-compatible Solidity unit tests.
-- TypeScript integration tests using `mocha` and ethers.js
-- Examples demonstrating how to connect to different types of networks, including locally simulating OP mainnet.
+1. Penerbitan Ijazah : Issuer dapat menerbitkan ijazah
+2. Pencabutan Ijazah : Issuer dapat mencabut ijazah yang telah diterbitkan
+3. Melihat Ijazah : Siapapun dapat melihat ijazah beserta statusnya yang telah diterbitkan issuer jika memiliki link unlistednya
 
-## Usage
+## Cara menjalankan
 
-### Running Tests
+1. Clone
 
-To run all the tests in the project, execute the following command:
-
-```shell
-npx hardhat test
+```sh
+git clone https://github.com/Kizaaaa/certichain.git
 ```
 
-You can also selectively run the Solidity or `mocha` tests:
+2. Pindah ke frontend
 
-```shell
-npx hardhat test solidity
-npx hardhat test mocha
+```sh
+cd frontend
 ```
 
-### Make a deployment to Sepolia
+3. Install dependencies
 
-This project includes an example Ignition module to deploy the contract. You can deploy this module to a locally simulated chain or to Sepolia.
-
-To run the deployment to a local chain:
-
-```shell
-npx hardhat ignition deploy ignition/modules/Counter.ts
+```sh
+npm install
 ```
 
-To run the deployment to Sepolia, you need an account with funds to send the transaction. The provided Hardhat configuration includes a Configuration Variable called `SEPOLIA_PRIVATE_KEY`, which you can use to set the private key of the account you want to use.
+4. Buat .env.local :
 
-You can set the `SEPOLIA_PRIVATE_KEY` variable using the `hardhat-keystore` plugin or by setting it as an environment variable.
-
-To set the `SEPOLIA_PRIVATE_KEY` config variable using `hardhat-keystore`:
-
-```shell
-npx hardhat keystore set SEPOLIA_PRIVATE_KEY
+```sh
+NEXT_PUBLIC_CONTRACT_ADDRESS=
+NEXT_PUBLIC_NETWORK=
+NEXT_PUBLIC_PINATA_API_KEY=
+NEXT_PUBLIC_PINATA_SECRET_API_KEY=
+ADMIN_PUBLIC_ADDRESS=
 ```
 
-After setting the variable, you can run the deployment with the Sepolia network:
+5. Run
 
-```shell
-npx hardhat ignition deploy --network sepolia ignition/modules/Counter.ts
+```sh
+npm run dev
 ```
+
+## Pembagian tugas
+
+- 13522010 : Issuer, Web
+- 13522044 : Revoker, Web, Viewer
+- 13522059 : Blockchain, Web
+
+## Dependencies
+
+### Root (Blockchain/Hardhat)
+
+| Package | Version |
+|---------|---------|
+| @openzeppelin/contracts | ^5.4.0 |
+| @react-pdf/renderer | ^4.3.1 |
+| buffer | ^6.0.3 |
+| dotenv | ^17.2.3 |
+| html2canvas | ^1.4.1 |
+| ipfs-http-client | ^60.0.1 |
+| jspdf | ^3.0.4 |
+| pinata | ^2.5.2 |
+
+#### Dev Dependencies
+
+| Package | Version |
+|---------|---------|
+| @nomicfoundation/hardhat-ethers | ^4.0.3 |
+| @nomicfoundation/hardhat-ignition | ^3.0.6 |
+| @nomicfoundation/hardhat-toolbox-mocha-ethers | ^3.0.2 |
+| @types/chai | ^4.3.20 |
+| @types/chai-as-promised | ^8.0.2 |
+| @types/mocha | ^10.0.10 |
+| @types/node | ^22.19.3 |
+| chai | ^5.3.3 |
+| ethers | ^6.16.0 |
+| forge-std | github:foundry-rs/forge-std#v1.9.4 |
+| hardhat | ^3.1.0 |
+| mocha | ^11.7.5 |
+| typescript | ~5.8.0 |
+
+### Frontend (Next.js)
+
+| Package | Version |
+|---------|---------|
+| axios | ^1.13.2 |
+| ethers | ^6.16.0 |
+| html2canvas | ^1.4.1 |
+| jspdf | ^3.0.4 |
+| next | 16.1.1 |
+| pdf-lib | ^1.17.1 |
+| react | 19.2.3 |
+| react-dom | 19.2.3 |
+| react-pdf | ^10.2.0 |
+
+#### Dev Dependencies
+
+| Package | Version |
+|---------|---------|
+| @tailwindcss/postcss | ^4 |
+| @types/node | ^20 |
+| @types/react | ^19 |
+| @types/react-dom | ^19 |
+| eslint | ^9 |
+| eslint-config-next | 16.1.1 |
+| tailwindcss | ^4 |
+| typescript | ^5 |
+
