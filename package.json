@@ -35,6 +35,14 @@
   },
   "dependencies": {
     "@openzeppelin/contracts": "^5.4.0",
-    "dotenv": "^17.2.3"
+    "@react-pdf/renderer": "^4.3.1",
+    "axios": "^1.13.2",
+    "buffer": "^6.0.3",
+    "dotenv": "^17.2.3",
+    "fs": "^0.0.1-security",
+    "html2canvas": "^1.4.1",
+    "ipfs-http-client": "^60.0.1",
+    "jspdf": "^3.0.4",
+    "pinata": "^2.5.2"
   }
 }
