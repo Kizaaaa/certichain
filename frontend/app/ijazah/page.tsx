@@ -193,7 +193,7 @@ function CertificateViewer() {
             <div className="p-4">
               <iframe
                 src={pdfUrl}
-                className="w-full h-[800px] border-0 rounded"
+                className="w-full h-200 border-0 rounded"
                 title="Certificate PDF"
               />
             </div>

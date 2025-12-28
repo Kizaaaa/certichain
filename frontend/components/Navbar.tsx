@@ -4,11 +4,7 @@ import Link from "next/link";
 import { useAuth } from "@/context/AuthContext";
 
 export default function Navbar() {
-  const { isAuthenticated, address, logout } = useAuth();
-
-  const formatAddress = (addr: string) => {
-    return `${addr.slice(0, 6)}...${addr.slice(-4)}`;
-  };
+  const { isAuthenticated, logout } = useAuth();
 
   return (
     <nav className="fixed top-0 left-0 right-0 bg-white dark:bg-zinc-900 border-b border-zinc-200 dark:border-zinc-800 z-50">
@@ -24,9 +20,6 @@ export default function Navbar() {
           <div className="flex items-center gap-4">
             {isAuthenticated ? (
               <>
-                <span className="text-sm text-zinc-600 dark:text-zinc-400 font-mono">
-                  {address && formatAddress(address)}
-                </span>
                 <Link
                   href="/admin/issue"
                   className="text-sm text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-white"
