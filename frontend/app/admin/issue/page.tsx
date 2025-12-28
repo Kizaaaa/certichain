@@ -27,9 +27,12 @@ export default function IssueForm() {
   const [loading, setLoading] = useState(false);
   const [status, setStatus] = useState('');
 
-  const generatePDF = async () => {
+  const handleFullProcess = async () => {
+    setLoading(true);
+    
     try {
-        setStatus('Generating PDF...');
+      // Step 1: Generate PDF
+      setStatus('Step 1/4: Generating PDF...');
         const pdf = new jsPDF('portrait', 'mm', 'a4');
         
         const issueDate = new Date().toLocaleDateString('id-ID', { 
@@ -94,83 +97,50 @@ export default function IssueForm() {
         pdf.text('Prof. Dr. Ir. Anaxagoras, M.T.', pageWidth - 30, yPos, { align: 'right' });
         yPos += 6;
         pdf.text('NIP: 33550336', pageWidth - 30, yPos, { align: 'right' });
-    
-    const pdfBlob = pdf.output('blob');
-    setPdfBlob(pdfBlob);
-    
-    // Compute hash
-    const arrayBuffer = await pdfBlob.arrayBuffer();
-    const hash = await sha256(arrayBuffer)
-    setDocHash(hash);
-    setStatus('PDF generated! Hash: ' + hash.slice(0, 16) + '...');
-    } catch (error: any) {
-      setStatus('Error generating PDF: ' + error.message);
-    }
-    };
+      
+      const generatedPdfBlob = pdf.output('blob');
+      setPdfBlob(generatedPdfBlob);
+      
+      const arrayBuffer = await generatedPdfBlob.arrayBuffer();
+      const hash = await sha256(arrayBuffer);
+      setDocHash(hash);
+      
+      // Step 2: Upload to IPFS
+      setStatus('Step 2/4: Encrypting and uploading to IPFS...');
+      const { encrypted, key, iv } = await encryptAES(arrayBuffer);
+      const encryptedBlob = combineIvAndEncrypted(iv, encrypted);
+      const keyHex = await exportKeyToHex(key);
+      setAesKey(keyHex);
+      
+      const formData = new FormData();
+      formData.append("file", encryptedBlob, `${name}_${nim}_ijazah.enc`);
 
-  const uploadIPFS = async (blob: Blob) => {
-        if (!pdfBlob) {
-            setStatus('Generate PDF first');
-            return;
-        }
-        
-        try {
-            setStatus('Encrypting PDF...');
-            const arrayBuffer = await pdfBlob.arrayBuffer();
-            const { encrypted, key, iv } = await encryptAES(arrayBuffer);
-            const encryptedBlob = combineIvAndEncrypted(iv, encrypted);
-            const keyHex = await exportKeyToHex(key);
-            setAesKey(keyHex);
-            
-            setStatus('Uploading to IPFS...');
-            const formData = new FormData();
-            formData.append("file", encryptedBlob, `${name}_${nim}_ijazah.enc`);
-
-            const response = await fetch("https://api.pinata.cloud/pinning/pinFileToIPFS", {
-                method: "POST",
-                headers: {
-                    "pinata_api_key": pinata_api!,
-                    "pinata_secret_api_key": pinata_key!,
-                },
-                body: formData,
-            });
-            
-            const data = await response.json();
-            const ipfsUri = `ipfs://${data.IpfsHash}`;
-            setStorageURI(ipfsUri);
-            setStatus('Uploaded to IPFS: ' + ipfsUri);
-        } catch (error: any) {
-            setStatus('Error uploading to IPFS: ' + error.message);
-        }
-    }
-
-  const signDocument = async () => {
-    if (!docHash) {
-      setStatus('Generate PDF first');
-      return;
-    }
-    
-    try {
-      setStatus('Signing document...');
+      const response = await fetch("https://api.pinata.cloud/pinning/pinFileToIPFS", {
+        method: "POST",
+        headers: {
+          "pinata_api_key": pinata_api!,
+          "pinata_secret_api_key": pinata_key!,
+        },
+        body: formData,
+      });
+      
+      const data = await response.json();
+      const ipfsUri = `ipfs://${data.IpfsHash}`;
+      setStorageURI(ipfsUri);
+      
+      // Step 3: Sign document
+      setStatus('Step 3/4: Signing document...');
       const provider = new ethers.BrowserProvider(window.ethereum);
       const signer = await provider.getSigner();
-      const sig = await signer.signMessage(docHash);
+      const sig = await signer.signMessage(hash);
       setSignature(sig);
-      setStatus('Document signed!');
-    } catch (error: any) {
-      setStatus('Error signing: ' + error.message);
-    }
-  };
-
-  const handleIssue = async () => {
-    setLoading(true);
-    try {
-      const provider = new ethers.BrowserProvider(window.ethereum);
-      const signer = await provider.getSigner();
+      
+      // Step 4: Issue certificate on blockchain
+      setStatus('Step 4/4: Issuing certificate on blockchain...');
       const contract = new ethers.Contract(CONTRACT_ADDRESS!, CertificateRegistryABI.abi, signer);
       
-      const hashBytes32 = '0x' + docHash;
-      const tx = await contract.issueCertificate(hashBytes32, storageURI);
+      const hashBytes32 = '0x' + hash;
+      const tx = await contract.issueCertificate(hashBytes32, ipfsUri);
       const receipt = await tx.wait();
       
       const certIssuedEvent = receipt.logs.find((log: any) => {
@@ -188,14 +158,15 @@ export default function IssueForm() {
         certId = parsed?.args[0].toString() || '';
       }
       
-      const ipfsHash = storageURI.replace('ipfs://', '');
+      const ipfsHash = ipfsUri.replace('ipfs://', '');
       const encFileUrl = `https://gateway.pinata.cloud/ipfs/${ipfsHash}`;
-      const link = `http://localhost:3000/ijazah?certId=${certId}&tx=${receipt.hash}&encfile=${encodeURIComponent(encFileUrl)}&key=${aesKey}`;
+      const link = `http://localhost:3000/ijazah?certId=${certId}&tx=${receipt.hash}&encfile=${encodeURIComponent(encFileUrl)}&key=${keyHex}`;
       
-      setStatus(`Certificate issued!\n\nLink: ${link}`);
+      setStatus(`✅ Certificate issued successfully!\n\nCert ID: ${certId}\nTransaction: ${receipt.hash}\n\nLink: ${link}`);
     } catch (error: any) {
-      setStatus(`Error: ${error.message}`);
+      setStatus(`❌ Error: ${error.message}`);
     }
+    
     setLoading(false);
   };
 
@@ -212,19 +183,15 @@ export default function IssueForm() {
         <input type="text" placeholder="Gelar" value={gelar} onChange={(e) => setGelar(e.target.value)} className="p-3 border rounded" />
       </div>
 
-      <button onClick={generatePDF} className="bg-blue-500 text-white px-6 py-3 rounded">Generate PDF</button>
-
-      <div className="grid grid-cols-2 gap-4">
-        <button onClick={() => uploadIPFS(pdfBlob!)} className="bg-blue-500 text-white px-6 py-3 rounded">Upload IPFS</button>
-        <button onClick={signDocument} className="bg-blue-500 text-white px-6 py-3 rounded">Sign</button>
-      </div>
-
-      <button onClick={handleIssue} disabled={loading || !docHash || !storageURI || !aesKey} 
-              className="w-full bg-indigo-600 text-white p-4 rounded font-bold disabled:opacity-50">
-        {loading ? 'Issuing...' : 'Issue Certificate'}
+      <button 
+        onClick={handleFullProcess} 
+        disabled={loading || !name || !nim || !gelar} 
+        className="w-full bg-indigo-600 text-white p-4 rounded font-bold disabled:opacity-50 hover:bg-indigo-700"
+      >
+        {loading ? status : 'Issue Certificate'}
       </button>
       
-      {status && <p className="p-4 bg-gray-100 text-black rounded whitespace-pre-wrap break-all">{status}</p>}
+      {status && !loading && <p className="p-4 bg-gray-100 text-black rounded whitespace-pre-wrap break-all">{status}</p>}
     </div>
   );
 }
